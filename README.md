@@ -370,18 +370,88 @@ log.dirs=/tmp/kafka-logs
 
 ## 🖼️ Screenshots
 
-### Dashboard Overview
-The dashboard displays:
-- Live traffic statistics cards
-- Real-time scatter plot of traffic patterns
-- Protocol distribution pie chart
-- Anomaly score histogram
-- Time-series graphs with anomaly markers
+### 📊 Dashboard Overview
 
-### Attack Detection
-- Red markers indicate detected anomalies
-- Green markers show normal traffic
-- Real-time alerts for each attack type
+![Dashboard Overview](screenshots/dashboard-overview.png)
+
+The main dashboard displays real-time statistics including:
+- **Total Packets Processed**: Live counter of all network traffic
+- **Normal Traffic**: Count and percentage of legitimate traffic
+- **Anomalies Detected**: Real-time threat detection count
+- **Threat Level**: Current security threat percentage
+
+Features include:
+- **Download CSV Report**: Export complete traffic analysis
+- **Dynamic Buffer Size Control**: Adjust ML model sensitivity (10-1000 samples)
+- **Live Update Interval**: 1-second refresh rate
+
+---
+
+### 📍 Traffic Pattern Analysis
+
+![Traffic Pattern Analysis](screenshots/traffic-pattern-analysis.png)
+
+Interactive scatter plot visualization showing:
+- **Green markers**: Normal traffic patterns (bytes sent vs received)
+- **Red X markers**: Detected anomalies and attack patterns
+- **Real-time clustering**: Visual identification of traffic behavior
+- **Hover details**: Detailed packet information on mouse-over
+
+This view helps identify:
+- Data exfiltration (high outbound, low inbound)
+- DDoS attacks (abnormal packet ratios)
+- Port scanning activities
+- Unusual protocol behavior
+
+---
+
+### 📌 Protocol Distribution & Anomaly Scores
+
+![Protocol Distribution](screenshots/protocol-distribution.png)
+
+Comprehensive network analysis featuring:
+
+**Network Protocols Pie Chart:**
+- Distribution across HTTP, HTTPS, FTP, SSH, DNS, SMTP, IMAP, TELNET
+- Color-coded protocol identification
+- Percentage breakdown of each protocol
+- Helps identify protocol-based attacks
+
+**Anomaly Score Distribution Histogram:**
+- Visual representation of Isolation Forest confidence scores
+- Separation between normal (green) and anomalous (red) traffic
+- Threshold visualization for attack detection
+- Statistical distribution of network behavior
+
+---
+
+### 📈 Real-time Timeline & Time Series
+
+![Real-time Timeline](screenshots/real-time-timeline.png)
+
+Dual-panel time series visualization:
+
+**Top Panel - Traffic Volume:**
+- Real-time bytes sent over time
+- Blue line with area fill for normal traffic
+- Red X markers highlighting detected attacks
+- Trend analysis for traffic patterns
+
+**Bottom Panel - Anomaly Confidence Score:**
+- ML model confidence scores over time
+- Orange threshold line for detection sensitivity
+- Helps fine-tune detection parameters
+- Historical attack pattern visibility
+
+---
+
+### ⚙️ System Configuration
+
+The dashboard includes live system status:
+- **Algorithm**: Isolation Forest (Unsupervised ML)
+- **Detection Mode**: Auto (Dynamic threshold adjustment)
+- **Active Buffer Size**: Configurable sample size for ML training
+- **System Status**: 🟢 ACTIVE with real-time monitoring
 
 ## 🔧 Troubleshooting
 
