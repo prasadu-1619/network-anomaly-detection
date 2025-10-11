@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project Specific
+network_traffic_data.json
+*.log
+producer.log
+consumer.log
+kafka.log
+
+# Kafka (if accidentally copied)
+kafka_2.13-4.0.0/
+*.tgz
+
+# Data files
+*.csv
+data/
+logs/
+
+# OS
+Thumbs.db
+.DS_Store
