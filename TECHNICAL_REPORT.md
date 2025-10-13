@@ -2,21 +2,29 @@
 
 ## Executive Summary
 
-This document provides a comprehensive technical analysis of the **CyberShield Network Intrusion Detection System (NIDS)**, an advanced real-time anomaly detection system that leverages Machine Learning (Isolation Forest algorithm), Apache Kafka streaming, and interactive web visualization to identify cyber threats in network traffic.
+This document provides a comprehensive technical analysis of the **CyberShield Network Intrusion Detection System (NIDS)**, an advanced real-time anomaly detection system that leverages **real network packet capture** from Windows devices, Machine Learning (Isolation Forest algorithm), Apache Kafka streaming across devices, and interactive web visualization to identify cyber threats in network traffic.
+
+**Key Features:**
+- **Cross-Device Architecture**: Windows packet sniffer sends data to Linux/WSL Kafka broker over WiFi
+- **Real Traffic Analysis**: Captures actual network packets using Scapy on Windows
+- **Multi-Device Traffic Generation**: Network devices ping Windows PC to generate traffic
+- **ML-Based Detection**: Isolation Forest algorithm identifies anomalous patterns
+- **Real-Time Dashboard**: Interactive Dash/Plotly visualization running on Linux
 
 ---
 
 ## Table of Contents
 
 1. [System Architecture](#system-architecture)
-2. [Producer Module (Traffic Simulator)](#producer-module)
-3. [Consumer Module (ML Detection Engine)](#consumer-module)
-4. [Machine Learning Implementation](#machine-learning)
+2. [Traffic Capture Module (Windows Packet Sniffer)](#traffic-capture-module)
+3. [Producer Module (Optional Traffic Simulator)](#producer-module)
+4. [Consumer Module (ML Detection Engine)](#consumer-module)
 5. [Visualization & Dashboard](#visualization)
 6. [Data Flow & Processing](#data-flow)
 7. [Attack Detection Mechanisms](#attack-detection)
 8. [Performance & Scalability](#performance)
 9. [Technical Stack](#technical-stack)
+10. [Key Insights & Takeaways](#key-insights)
 
 ---
 
@@ -278,7 +286,7 @@ producer = KafkaProducer(
 - Serializes Python dictionaries to JSON format
 - Sends messages to Kafka topics
 
-#### 2.2.2 Traffic Simulator Class
+#### 3.2.2 Traffic Simulator Class
 
 ```python
 class AdvancedTrafficSimulator:
@@ -297,9 +305,9 @@ class AdvancedTrafficSimulator:
 - **IMAP** (Port 143): Email retrieval
 - **TELNET** (Port 23): Remote terminal
 
-### 2.3 Normal Traffic Generation
+### 3.3 Normal Traffic Generation
 
-#### 2.3.1 Time-Based Traffic Patterns
+#### 3.3.1 Time-Based Traffic Patterns
 
 ```python
 def generate_normal_traffic(self):
@@ -315,7 +323,7 @@ def generate_normal_traffic(self):
 - Lower activity during nights and weekends
 - Mimics real-world network patterns
 
-#### 2.3.2 Protocol-Specific Traffic
+#### 3.3.2 Protocol-Specific Traffic
 
 Each protocol has unique characteristics:
 
@@ -337,11 +345,11 @@ if protocol == 'HTTPS':
 - `src_port`: Source port (random 1024-65535)
 - `dst_port`: Destination port (standard for protocol)
 
-### 2.4 Attack Simulation
+### 3.4 Attack Simulation
 
 The producer simulates 7 different attack types:
 
-#### 2.4.1 DDoS Attack (3% of traffic)
+#### 3.4.1 DDoS Attack (3% of traffic)
 
 ```python
 def generate_ddos_attack(self):
@@ -366,7 +374,7 @@ def generate_ddos_attack(self):
 
 ---
 
-#### 2.4.2 Port Scanning (2% of traffic)
+#### 3.4.2 Port Scanning (2% of traffic)
 
 ```python
 def generate_port_scan(self):
@@ -503,7 +511,7 @@ def generate_zero_day_exploit(self):
 
 ---
 
-### 2.5 Traffic Distribution Logic
+### 3.5 Traffic Distribution Logic
 
 ```python
 def generate_traffic(self):
@@ -539,7 +547,7 @@ def generate_traffic(self):
 | DNS Tunneling | 0.5% | 1 out of 200 packets |
 | Zero-Day | 0.5% | 1 out of 200 packets |
 
-### 2.6 Producer Main Loop
+### 3.6 Producer Main Loop
 
 ```python
 while True:
@@ -574,17 +582,17 @@ while True:
 
 ---
 
-## 3. Consumer Module (ML Detection Engine)
+## 4. Consumer Module (ML Detection Engine)
 
-### 3.1 Purpose
+### 4.1 Purpose
 
 The `consumer_plot.py` module:
-1. **Consumes** data from Kafka
+1. **Consumes** data from Kafka (from both Windows sniffer and optional simulator)
 2. **Detects** anomalies using Machine Learning
 3. **Stores** data persistently
 4. **Visualizes** results in real-time dashboard
 
-### 3.2 Configuration Parameters
+### 4.2 Configuration Parameters
 
 ```python
 KAFKA_TOPIC = 'network_traffic'          # Kafka topic to subscribe
@@ -597,7 +605,7 @@ DATA_STORAGE_FILE = 'network_traffic_data.json'  # Persistent storage
 CLEAR_DATA_ON_STARTUP = True            # Clear old data flag
 ```
 
-### 3.3 Kafka Consumer Setup
+### 4.3 Kafka Consumer Setup
 
 ```python
 consumer = KafkaConsumer(
@@ -615,7 +623,7 @@ consumer = KafkaConsumer(
 - Auto-commits read offsets (doesn't re-read messages)
 - Starts from latest messages (doesn't process historical data)
 
-### 3.4 Data Structures
+### 4.4 Data Structures
 
 #### 3.4.1 Data Buffer (Processing Queue)
 
@@ -658,7 +666,7 @@ Stored as JSON file for:
 - CSV export
 - System recovery
 
-### 3.5 Machine Learning Model
+### 4.5 Machine Learning Model
 
 #### 3.5.1 Isolation Forest Algorithm
 
@@ -722,7 +730,7 @@ X = [[item[f] for f in features] for item in data_buffer]
 - Numerical values suitable for ML
 - Distinguish normal from anomalous traffic
 
-### 3.6 Anomaly Detection Process
+### 4.6 Anomaly Detection Process
 
 #### 3.6.1 Initial Training Phase
 
@@ -803,7 +811,7 @@ Incoming Traffic
    [Store & Display]
 ```
 
-### 3.7 Data Persistence
+### 4.7 Data Persistence
 
 ```python
 # Save to JSON file every buffer processing
@@ -825,16 +833,18 @@ stats["normal_count"] = sum(1 for item in all_traffic_data if item.get('is_anoma
 
 ---
 
-## 4. Visualization & Dashboard
+---
 
-### 4.1 Dashboard Framework
+## 5. Visualization & Dashboard
+
+### 5.1 Dashboard Framework
 
 **Technology Stack:**
 - **Dash**: Python web framework by Plotly
 - **Plotly**: Interactive charting library
 - **HTML/CSS**: Custom styling
 
-### 4.2 Dashboard Components
+### 5.2 Dashboard Components
 
 #### 4.2.1 Statistics Cards
 
@@ -993,7 +1003,7 @@ stats["normal_count"] = sum(1 for item in all_traffic_data if item.get('is_anoma
 
 ---
 
-### 4.3 Interactive Controls
+### 5.3 Interactive Controls
 
 #### 4.3.1 Download CSV Report Button
 
@@ -1040,7 +1050,7 @@ def update_buffer_size(n_clicks, new_size):
 
 ---
 
-### 4.4 Update Mechanism
+### 5.4 Update Mechanism
 
 ```python
 dcc.Interval(id='interval-component', interval=1000, n_intervals=0)
@@ -1055,21 +1065,30 @@ dcc.Interval(id='interval-component', interval=1000, n_intervals=0)
 
 ---
 
-## 5. Data Flow & Processing
+---
 
-### 5.1 Complete Data Pipeline
+## 6. Data Flow & Processing
+
+### 6.1 Complete Data Pipeline
 
 ```
-STEP 1: Traffic Generation (Producer)
-├─ Generate synthetic packet
-├─ Add timestamp
-└─ Send to Kafka → Topic: 'network_traffic'
+STEP 1: Traffic Generation (Multi-Device)
+├─ OPTION A: Real Traffic Capture (Windows)
+│  ├─ Devices ping Windows PC over WiFi
+│  ├─ Scapy captures packets
+│  ├─ Extract features (IP, ports, protocol, bytes)
+│  └─ Send to Kafka → 192.168.34.134:9092
+│
+└─ OPTION B: Simulated Traffic (Linux - Optional)
+   ├─ Generate synthetic packet
+   ├─ Add timestamp
+   └─ Send to Kafka → localhost:9092
 
-            ↓ (Kafka Message Broker)
+            ↓ (Kafka Message Broker - Cross-Device)
 
-STEP 2: Data Consumption (Consumer Thread)
-├─ Subscribe to Kafka topic
-├─ Receive JSON message
+STEP 2: Data Consumption (Consumer Thread on Linux)
+├─ Subscribe to Kafka topic 'network_traffic'
+├─ Receive JSON message from Windows/Local
 ├─ Add to data_buffer[]
 └─ Wait for buffer to fill
 
@@ -1113,7 +1132,7 @@ STEP 6: User Interaction
 └─ Analyze attack patterns
 ```
 
-### 5.2 Threading Architecture
+### 6.2 Threading Architecture
 
 ```
 Main Thread:
@@ -1143,9 +1162,11 @@ Callback Threads (Dash):
 
 ---
 
-## 6. Attack Detection Mechanisms
+---
 
-### 6.1 How Different Attacks Are Detected
+## 7. Attack Detection Mechanisms
+
+### 7.1 How Different Attacks Are Detected
 
 #### 6.1.1 DDoS Attack Detection
 
@@ -1212,7 +1233,7 @@ packets: 50-150         # ⚠️ Many DNS packets
 
 ---
 
-### 6.2 False Positive Handling
+### 7.2 False Positive Handling
 
 **Isolation Forest Advantages:**
 - **Auto contamination**: Adapts to actual anomaly rate
@@ -1229,9 +1250,11 @@ ANOMALY_SCORE_THRESHOLD = -0.1
 
 ---
 
-## 7. Performance & Scalability
+---
 
-### 7.1 System Performance
+## 8. Performance & Scalability
+
+### 8.1 System Performance
 
 **Throughput:**
 - **Producer**: 2-20 packets/second (variable delay 0.05-0.4s)
@@ -1244,7 +1267,7 @@ ANOMALY_SCORE_THRESHOLD = -0.1
 - **ML Detection**: < 100ms per batch
 - **End-to-end**: < 2 seconds (generation → detection → visualization)
 
-### 7.2 Resource Usage
+### 8.2 Resource Usage
 
 **Memory:**
 - `plot_data`: Max 500 points × 10 features ≈ 50KB
@@ -1257,7 +1280,7 @@ ANOMALY_SCORE_THRESHOLD = -0.1
 - Consumer: < 10% (ML processing)
 - Dashboard: < 5% (visualization)
 
-### 7.3 Scalability Considerations
+### 8.3 Scalability Considerations
 
 **Horizontal Scaling:**
 - Add Kafka partitions
@@ -1276,12 +1299,14 @@ ANOMALY_SCORE_THRESHOLD = -0.1
 
 ---
 
-## 8. Technical Stack Summary
+---
 
-### 8.1 Programming Languages
+## 9. Technical Stack Summary
+
+### 9.1 Programming Languages
 - **Python 3.8+**: Main language
 
-### 8.2 Core Libraries
+### 9.2 Core Libraries
 
 #### Data Streaming
 - **kafka-python 2.0.2**: Kafka client
@@ -1319,7 +1344,7 @@ ANOMALY_SCORE_THRESHOLD = -0.1
   - Time series
   - Hover tooltips
 
-### 8.3 Infrastructure
+### 9.3 Infrastructure
 
 #### Message Broker
 - **Apache Kafka 4.0.0** (kafka_2.13-4.0.0)
@@ -1327,18 +1352,30 @@ ANOMALY_SCORE_THRESHOLD = -0.1
   - Topic: `network_traffic`
   - Port: 9092
   - Persistent storage: `/tmp/kafka-logs`
+  - **Cross-device configuration:**
+    - `listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://localhost:9093`
+    - `advertised.listeners=PLAINTEXT://192.168.34.134:9092`
+    - Allows Windows client to connect over WiFi
+
+#### Packet Capture (Windows)
+- **Scapy**: Network packet manipulation library
+  - Real-time packet sniffing
+  - Protocol layer extraction (IP, TCP, UDP, ICMP)
+  - Requires Administrator privileges
 
 #### Web Server
-- **Dash built-in server**
+- **Dash built-in server** (Linux)
   - Host: 0.0.0.0
   - Port: 8050
   - Production-ready: No (use Gunicorn for production)
 
 ---
 
-## 9. Key Insights & Takeaways
+---
 
-### 9.1 Why This Architecture Works
+## 10. Key Insights & Takeaways
+
+### 10.1 Why This Architecture Works
 
 1. **Decoupled Components**
    - Producer and Consumer are independent
@@ -1360,7 +1397,7 @@ ANOMALY_SCORE_THRESHOLD = -0.1
    - Real-time updates keep users informed
    - Interactive exploration of data
 
-### 9.2 Practical Applications
+### 10.2 Practical Applications
 
 **Network Security:**
 - Intrusion detection systems (IDS)
@@ -1378,7 +1415,7 @@ ANOMALY_SCORE_THRESHOLD = -0.1
 - Alert notifications (email, SMS)
 - Compliance reporting
 
-### 9.3 Future Enhancements
+### 10.3 Future Enhancements
 
 **Model Improvements:**
 - Deep learning models (LSTM, Autoencoder)
