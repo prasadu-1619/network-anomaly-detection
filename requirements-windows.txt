@@ -1,0 +1,12 @@
+# Requirements for Windows Packet Sniffer (packet_sniffer_windows.py)
+# Install on Windows with: pip install -r requirements-windows.txt
+
+# Kafka client for sending packets to Linux/WSL Kafka broker
+kafka-python==2.0.2
+
+# Packet capture and manipulation library
+scapy>=2.5.0
+
+# Note: Scapy on Windows requires Npcap or WinPcap
+# Download Npcap from: https://npcap.com/
+# Install with "WinPcap API-compatible Mode" enabled
