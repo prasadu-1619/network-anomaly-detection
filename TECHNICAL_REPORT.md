@@ -24,23 +24,35 @@ This document provides a comprehensive technical analysis of the **CyberShield N
 
 ### 1.1 Overview
 
-The system follows a **producer-consumer architecture** with three main components:
+The system follows a **distributed cross-device architecture** with real network traffic capture and machine learning analysis:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        SYSTEM ARCHITECTURE                      │
+│                   DISTRIBUTED SYSTEM ARCHITECTURE               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────────┐          ┌──────────────────┐            │
-│  │   PRODUCER      │          │  APACHE KAFKA    │            │
-│  │   (Simulator)   │──────────▶  Message Broker  │            │
-│  │                 │  Publish │  Topic: network_ │            │
-│  │ • Generates     │          │  traffic         │            │
-│  │   traffic       │          │                  │            │
-│  │ • Simulates     │          │ • High throughput│            │
-│  │   attacks       │          │ • Persistent     │            │
-│  │ • JSON format   │          │ • Scalable       │            │
-│  └─────────────────┘          └──────────────────┘            │
+│  │ NETWORK DEVICES │          │  WINDOWS PC      │            │
+│  │ (Same WiFi)     │──────────▶ Packet Sniffer   │            │
+│  │                 │  Traffic │  (Scapy)         │            │
+│  │ • Laptops       │          │                  │            │
+│  │ • Phones        │          │ • Captures real  │            │
+│  │ • IoT Devices   │          │   packets        │            │
+│  │ • Ping/Browse   │          │ • Extracts       │            │
+│  └─────────────────┘          │   features       │            │
+│                                └──────────────────┘            │
+│                                        │                        │
+│                                        │ Kafka Publish          │
+│                                        ▼                        │
+│                               ┌──────────────────┐             │
+│                               │  APACHE KAFKA    │             │
+│                               │  (Linux/WSL)     │             │
+│                               │                  │             │
+│                               │ • Topic: network_│             │
+│                               │   traffic        │             │
+│                               │ • Message broker │             │
+│                               │ • Cross-device   │             │
+│                               └──────────────────┘             │
 │                                        │                        │
 │                                        │ Subscribe              │
 │                                        ▼                        │
@@ -69,22 +81,190 @@ The system follows a **producer-consumer architecture** with three main componen
 
 ### 1.2 Component Interaction
 
-1. **Producer** generates synthetic network traffic and sends it to Kafka
-2. **Kafka** acts as a message broker, buffering and distributing data
-3. **Consumer** subscribes to Kafka, processes data with ML, and stores results
-4. **Dashboard** visualizes data in real-time with interactive charts
+1. **Network Devices** (on same WiFi) generate real traffic by pinging Windows PC or browsing
+2. **Windows Packet Sniffer** captures live packets using Scapy and streams to Kafka
+3. **Kafka Broker** (Linux/WSL) acts as cross-device message bus with network-accessible configuration
+4. **Consumer** subscribes to Kafka, processes data with ML, and stores results
+5. **Dashboard** visualizes data in real-time with interactive charts
+
+### 1.3 Cross-Device Network Configuration
+
+**Kafka Configuration (Linux/WSL):**
+```properties
+listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://localhost:9093
+advertised.listeners=PLAINTEXT://192.168.34.134:9092
+```
+
+**Key Points:**
+- `0.0.0.0:9092` allows Kafka to listen on all network interfaces
+- `192.168.34.134` is the Linux/WSL machine IP accessible from Windows
+- Windows sniffer connects to `192.168.34.134:9092` across the network
+- All devices must be on the same WiFi network
 
 ---
 
-## 2. Producer Module (Traffic Simulator)
+## 2. Traffic Capture Module (Windows Packet Sniffer)
 
 ### 2.1 Purpose
 
-The `producer.py` module simulates realistic network traffic patterns, including both **normal traffic** and various **attack scenarios**. This allows the system to be tested and demonstrated without requiring actual network infrastructure.
+The `packet_sniffer_windows.py` module captures **real network traffic** from a Windows machine using Scapy. It monitors all incoming and outgoing packets, extracts relevant features, and streams them to Kafka for analysis.
 
 ### 2.2 Core Components
 
 #### 2.2.1 Kafka Producer Initialization
+
+```python
+producer = KafkaProducer(
+    bootstrap_servers='192.168.34.134:9092',  # WSL/Linux Kafka server
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
+```
+
+**What it does:**
+- Connects to Kafka running on Linux/WSL machine at IP `192.168.34.134`
+- Serializes Python dictionaries to JSON format
+- Sends messages to Kafka topic `network_traffic`
+- Enables cross-device communication over WiFi
+
+#### 2.2.2 Packet Capture with Scapy
+
+```python
+from scapy.all import sniff, IP, TCP, UDP, ICMP
+
+def packet_callback(packet):
+    if IP in packet:
+        ip_src = packet[IP].src
+        ip_dst = packet[IP].dst
+        # Extract protocol-specific data
+        if TCP in packet:
+            protocol = "TCP"
+            src_port = packet[TCP].sport
+            dst_port = packet[TCP].dport
+        elif UDP in packet:
+            protocol = "UDP"
+            src_port = packet[UDP].sport
+            dst_port = packet[UDP].dport
+        elif ICMP in packet:
+            protocol = "ICMP"
+```
+
+**Captured Information:**
+- **Source/Destination IPs**: Identifies traffic endpoints
+- **Ports**: Source and destination ports
+- **Protocol**: TCP, UDP, ICMP, etc.
+- **Payload Size**: Bytes sent/received
+- **Timestamp**: When packet was captured
+
+#### 2.2.3 Anomaly Injection (For Testing)
+
+```python
+def inject_anomaly():
+    if random.random() < 0.08:  # 8% anomaly rate
+        return True
+    return False
+```
+
+**Purpose:**
+- Simulates attack patterns in real traffic for testing
+- Creates high packet rates, unusual ports, or large transfers
+- Helps validate ML model detection capabilities
+
+### 2.3 Traffic Generation Methods
+
+#### 2.3.1 Ping-Based Traffic (Primary Method)
+
+From any device on the same WiFi network:
+
+```bash
+# Linux/macOS
+ping <windows_ip>
+
+# Windows (continuous)
+ping <windows_ip> -t
+```
+
+**Traffic Characteristics:**
+- **Protocol**: ICMP
+- **Packet Size**: Typically 64 bytes
+- **Frequency**: 1 packet per second
+- **Purpose**: Generate consistent baseline traffic for testing
+
+#### 2.3.2 Multi-Device Traffic Generation
+
+**From Laptops/Desktops:**
+```bash
+# Continuous ping
+ping 192.168.34.xxx -t
+
+# High-frequency ping (requires admin/sudo)
+ping -i 0.2 192.168.34.xxx  # Ping every 0.2 seconds
+```
+
+**From Mobile Devices:**
+- Use network utility apps (e.g., PingTools, Network Analyzer)
+- Browse websites hosted on Windows machine
+- Connect to services running on Windows
+
+**From Other Sources:**
+- Web browsing to Windows-hosted server
+- File transfers (FTP, SMB)
+- SSH connections
+- Database queries
+
+### 2.4 Real-World Data Features
+
+Unlike simulated data, real packet capture provides:
+
+**Authentic Network Patterns:**
+- Actual protocol distributions (TCP/UDP/ICMP ratios)
+- Real packet timing and bursts
+- Genuine network latency and jitter
+- Hardware-specific MTU sizes
+
+**Environmental Factors:**
+- WiFi interference and retransmissions
+- Background OS traffic (updates, telemetry)
+- Other devices on network
+- Router/gateway overhead
+
+### 2.5 Feature Extraction
+
+For each captured packet, the sniffer extracts:
+
+```python
+record = {
+    "bytes_sent": payload_size,
+    "bytes_received": payload_size,
+    "packets": 1,
+    "duration": round(random.uniform(0.001, 2.0), 3),
+    "protocol": protocol,  # TCP, UDP, ICMP
+    "src_port": src_port,
+    "dst_port": dst_port,
+    "src_ip": ip_src,
+    "dst_ip": ip_dst,
+    "timestamp": datetime.now().isoformat()
+}
+```
+
+**Key Features for ML:**
+- **bytes_sent/received**: Data volume indicators
+- **packets**: Packet count for rate analysis
+- **duration**: Connection time
+- **protocol**: Protocol type for pattern matching
+- **ports**: Port numbers for service identification
+- **IPs**: Network topology mapping
+
+---
+
+## 3. Producer Module (Optional Traffic Simulator)
+
+### 3.1 Purpose
+
+The `producer.py` module is an **optional component** that simulates realistic network traffic patterns when real packet capture is not available or for testing specific attack scenarios. It complements the Windows packet sniffer by generating diverse, controlled attack patterns for ML model training and validation.
+
+### 3.2 Core Components
+
+#### 3.2.1 Kafka Producer Initialization
 
 ```python
 producer = KafkaProducer(
@@ -94,7 +274,7 @@ producer = KafkaProducer(
 ```
 
 **What it does:**
-- Connects to Kafka running on port 9092
+- Connects to Kafka running on port 9092 (local or remote)
 - Serializes Python dictionaries to JSON format
 - Sends messages to Kafka topics
 

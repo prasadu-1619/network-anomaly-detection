@@ -1,55 +1,138 @@
-# 🛡️ CyberShield - Network Intrusion Detection System
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![Kafka](https://img.shields.io/badge/Kafka-4.0.0-red)
-![Machine Learning](https://img.shields.io/badge/ML-Isolation%20Forest-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+# CyberShield: ML-Based Network Intrusion Detection System
 
-A real-time network intrusion detection system powered by Machine Learning (Isolation Forest algorithm) that monitors network traffic patterns and detects various cyber attacks including DDoS, Port Scanning, SQL Injection, Data Exfiltration, and more.
+## Overview
+This project is a real-time network anomaly detection system using machine learning. It consists of:
 
-## 📋 Table of Contents
-- [Features](#features)
-- [System Architecture](#system-architecture)
-- [Attack Detection Capabilities](#attack-detection-capabilities)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Running the Project](#running-the-project)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Configuration](#configuration)
-- [Screenshots](#screenshots)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
+- **Packet Sniffer (Windows):** Captures live network packets and streams them to Kafka.
+- **Kafka Broker:** Acts as a message bus for network traffic data.
+- **Producer Simulator (Linux):** Optionally simulates advanced network traffic and attacks.
+- **ML Consumer & Dashboard:** Consumes traffic data, detects anomalies using Isolation Forest, and visualizes results in a modern Dash web app.
 
-## ✨ Features
+---
 
-- **Real-time Traffic Monitoring**: Live network traffic simulation and analysis
-- **Machine Learning Detection**: Isolation Forest algorithm for anomaly detection
-- **Interactive Dashboard**: Beautiful Dash/Plotly web interface with real-time visualizations
-- **Multiple Attack Patterns**: Simulates and detects 8+ different attack types
-- **Kafka Stream Processing**: High-throughput data streaming with Apache Kafka
-- **Dynamic Configuration**: Adjust buffer size and parameters on-the-fly
-- **Data Persistence**: Traffic data stored in JSON format for analysis
-- **CSV Export**: Download detailed reports of detected anomalies
-- **Time-based Patterns**: Realistic traffic simulation with business hours variation
-- **Protocol Analysis**: Supports HTTP, HTTPS, FTP, SSH, DNS, SMTP, IMAP, TELNET
-
-## 🏗️ System Architecture
+## Architecture
 
 ```
-┌─────────────────┐      ┌──────────────┐      ┌─────────────────┐
-│  Producer       │──────▶│ Apache Kafka │──────▶│  Consumer       │
-│  (Traffic       │      │  (Stream)    │      │  (ML Detection) │
-│   Simulator)    │      │              │      │                 │
-└─────────────────┘      └──────────────┘      └─────────────────┘
-                                                        │
-                                                        ▼
-                                                ┌──────────────────┐
-                                                │  Dash Dashboard  │
-                                                │  (Visualization) │
-                                                └──────────────────┘
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│  Devices on  │      │  Windows PC  │      │   Kafka      │      │   Linux PC   │
+│  Same WiFi   │───▶──│ Packet Sniffer│───▶──│  Broker      │───▶──│ ML Consumer  │
+└──────────────┘      └──────────────┘      └──────────────┘      └──────────────┘
 ```
+
+---
+
+## Prerequisites
+
+- Python 3.8+
+- [Kafka](https://kafka.apache.org/quickstart) (tested with 3.x/4.x)
+- `pip install -r requirements.txt` (on Linux for consumer/producer)
+- Windows: [Scapy](https://scapy.net/) and [kafka-python](https://pypi.org/project/kafka-python/)
+
+---
+
+## Kafka Setup (Linux/WSL)
+
+Edit your `server.properties` (usually in `config/`):
+
+```
+listeners=PLAINTEXT://0.0.0.0:9092,CONTROLLER://localhost:9093
+advertised.listeners=PLAINTEXT://192.168.34.134:9092
+```
+
+- Replace `192.168.34.134` with your Linux/WSL machine's IP (accessible from Windows and other devices on the same WiFi).
+- Start Zookeeper and Kafka:
+  ```bash
+  bin/zookeeper-server-start.sh config/zookeeper.properties
+  bin/kafka-server-start.sh config/server.properties
+  ```
+
+---
+
+## Running the Packet Sniffer (on Windows)
+
+1. Install dependencies:
+   ```bash
+   pip install scapy kafka-python
+   ```
+2. Edit `packet_sniffer_windows.py` if needed to point to your Kafka server (default: `192.168.34.134:9092`).
+3. Run the sniffer:
+   ```bash
+   python packet_sniffer_windows.py
+   ```
+   - This will capture all packets and send them to the Kafka topic `network_traffic`.
+
+---
+
+## Generating Network Traffic
+
+From **another device** on the same WiFi (e.g., a Linux laptop or phone):
+
+1. Ping the Windows PC **indefinitely** to generate traffic:
+   ```bash
+   ping <windows_ip> -t   # On Windows
+   # or
+   ping <windows_ip>      # On Linux/macOS (Ctrl+C to stop)
+   ```
+   - Replace `<windows_ip>` with the actual IP address of your Windows machine.
+2. You can also use tools like `iperf`, web browsing, or file transfers to generate more diverse traffic.
+
+---
+
+## (Optional) Advanced Traffic Simulation (Linux)
+
+You can run `producer.py` to simulate realistic and attack traffic:
+
+```bash
+python producer.py
+```
+This will send both normal and attack patterns to the Kafka topic for testing.
+
+---
+
+## Running the ML Consumer & Dashboard (Linux)
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Start the consumer and dashboard:
+   ```bash
+   python consumer_plot.py
+   ```
+3. Open the provided local URL in your browser to view real-time analytics and anomaly detection.
+
+---
+
+## Files
+
+- `packet_sniffer_windows.py` — Windows packet sniffer, streams to Kafka
+- `producer.py` — Advanced traffic simulator (Linux, optional)
+- `consumer_plot.py` — ML anomaly detection and dashboard (Linux)
+- `network_traffic_data.json` — Persistent storage for traffic data
+- `requirements.txt` — Python dependencies
+- `screenshots/` — Example dashboard screenshots
+
+---
+
+## Troubleshooting
+
+- **Kafka not reachable?**
+  - Check firewall settings on both Windows and Linux.
+  - Ensure `advertised.listeners` is set to the correct IP.
+  - Use `telnet <kafka_ip> 9092` from Windows to test connectivity.
+- **No packets detected?**
+  - Make sure you are running the sniffer as Administrator.
+  - Try generating traffic (ping, browsing, etc.) from other devices.
+- **Dashboard not updating?**
+  - Check that Kafka is running and the consumer is connected.
+  - Look for errors in the terminal output.
+
+---
+
+## Credits
+
+Developed by Prasad. Powered by Python, Kafka, Scapy, Dash, and scikit-learn.
 
 ## 🎯 Attack Detection Capabilities
 
