@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cyber-gradient text-cyber-text font-sans antialiased min-h-screen m-0 p-0;
+  }
+}
+
+@layer components {
+  .cyber-panel {
+    @apply bg-cyber-panel border border-white/10 rounded-xl backdrop-blur-md shadow-cyber relative;
+  }
+  
+  .stat-card {
+    @apply cyber-panel p-4 text-center transition-all duration-300 ease-out hover:-translate-y-1 hover:border-cyber-accent/40 hover:shadow-cyber-hover overflow-hidden;
+  }
+  
+  .insight-line {
+    @apply block text-[13.5px] leading-relaxed my-2 text-blue-100;
+  }
+  
+  .insight-num {
+    @apply text-cyber-accent font-bold mr-1;
+  }
+  
+  .insight-val {
+    @apply text-white font-semibold;
+  }
+
+  /* Custom scrollbar for data tables */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(18, 18, 36, 0.5);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 212, 255, 0.3);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 212, 255, 0.6);
+  }
+}

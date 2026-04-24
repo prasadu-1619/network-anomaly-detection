@@ -2,13 +2,12 @@
 # CyberShield Network Intrusion Detection System
 # Requirements for Linux/WSL Consumer & Dashboard
 # ============================================================
-# 
+#
 # For Windows Packet Sniffer, use: requirements-windows.txt
-# 
+#
 # Install: pip install -r requirements.txt
 # ============================================================
 
-# Kafka Integration
 # Data Processing & Analysis
 pandas==2.0.3
 numpy==1.24.3
@@ -16,10 +15,19 @@ numpy==1.24.3
 # Machine Learning
 scikit-learn==1.3.0
 
-# Web Dashboard & Visualization
-dash==2.14.1
+# Backend REST API
+flask>=3.0.0
+
+# Streamlit Frontend
+streamlit>=1.45.0
+requests>=2.31.0
+
+# Visualization
 plotly==5.17.0
-dash-bootstrap-components==1.5.0
 
 # Network Packet Capture
 scapy>=2.4.5
+
+# Legacy Dash (kept for consumer_plot.py Kafka pipeline)
+dash==2.14.1
+dash-bootstrap-components==1.5.0
